@@ -195,16 +195,54 @@ export const getTransactionStatus = (date: Date) => {
   return date > twoDaysAgo ? "Processing" : "Success";
 };
 
+// Helper function to validate date
+const isValidDate = (date: string) => {
+  const [year, month, day] = date.split('-').map(Number);
+  if (isNaN(year) || isNaN(month) || isNaN(day)) return false;
+  
+  // Check year range (optional)
+  if (year < 1900 || year > 2100) return false;
+
+  // Check month range
+  if (month < 1 || month > 12) return false;
+
+  // Check day range based on month
+  const daysInMonth = new Date(year, month, 0).getDate();
+  if (day < 1 || day > daysInMonth) return false;
+
+  return true;
+};
+
+// Helper function to validate SSN
+const isValidSSN = (ssn: string) => {
+  // Regex for SSN: XXX-XX-XXXX where X is a digit
+  const ssnRegex = /^\d{3}-\d{2}-\d{4}$/;
+  return ssnRegex.test(ssn);
+};
+
 export const authFormSchema = (type: string) => z.object({
   // sign up
   firstName: type === 'sign-in' ? z.string().optional() : z.string().min(3),
   lastName: type === 'sign-in' ? z.string().optional() : z.string().min(3),
-  address1: type === 'sign-in' ? z.string().optional() : z.string().max(50),
+  address1: type === 'sign-in' ? z.string().optional() : z.string().min(1).max(50),
   city: type === 'sign-in' ? z.string().optional() : z.string().max(50),
   state: type === 'sign-in' ? z.string().optional() : z.string().min(2).max(2),
-  postalCode: type === 'sign-in' ? z.string().optional() : z.string().min(3).max(6),
-  dateOfBirth: type === 'sign-in' ? z.string().optional() : z.string().min(3),
-  ssn: type === 'sign-in' ? z.string().optional() : z.string().min(3),
+  postalCode: type === 'sign-in'
+    ? z.string().optional()
+    : z.string()
+        .regex(/^\d{5}(-\d{4})?$/, 'Must be a valid US Postal Code') // Regex for US postal codes
+        .min(3, 'Postal code must be at least 3 characters long'),
+  dateOfBirth: type === 'sign-in'
+        ? z.string().optional()
+        : z.string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in the format YYYY-MM-DD') // Ensure format YYYY-MM-DD
+            .min(1, 'Date of Birth is required') // Ensure it is not empty
+            .refine(date => isValidDate(date), 'Date must be a valid calendar date'), // Ensure it is a valid date
+  ssn: type === 'sign-in'
+    ? z.string().optional()
+    : z.string()
+      .min(1, 'SSN is required')
+      .refine(isValidSSN, 'Must be a valid US SSN'), // Ensure SSN is valid
   // both
   email: z.string().email(),
   password: z.string().min(8),

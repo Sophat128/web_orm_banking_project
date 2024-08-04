@@ -12,10 +12,12 @@ interface CustomInput {
   control: Control<z.infer<typeof formSchema>>,
   name: FieldPath<z.infer<typeof formSchema>>,
   label: string,
-  placeholder: string
+  placeholder: string,
+  disabled?: boolean,
+  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-const CustomInput = ({ control, name, label, placeholder }: CustomInput) => {
+const CustomInput = ({ control, name, label, placeholder,onChange, disabled }: CustomInput) => {
   return (
     <FormField
       control={control}
@@ -31,7 +33,14 @@ const CustomInput = ({ control, name, label, placeholder }: CustomInput) => {
                 placeholder={placeholder}
                 className="input-class"
                 type={name === 'password' ? 'password' : 'text'}
+                disabled={disabled} 
                 {...field}
+                onChange={(event) => {
+                  field.onChange(event);
+                  if (onChange) {
+                    onChange(event);
+                  }
+                }}
               />
             </FormControl>
             <FormMessage className="form-message mt-2" />
